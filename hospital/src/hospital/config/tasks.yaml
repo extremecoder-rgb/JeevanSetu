@@ -1,0 +1,115 @@
+festival_event_analysis:
+  description: >
+    Analyze Indian cultural calendars, public holidays, and historical hospital admission patterns to predict patient surges during major festivals and events. Focus on identifying patterns in injury types, admission rates, and departmental load during festivals like Diwali, Holi, Ganesh Chaturthi, Eid, and other regional celebrations.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Region>{region}</Region>
+    <Historical Data Period>{historical_data_period}</Historical Data Period>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    A festival surge forecast report that includes:
+    - Dates and duration of expected surges for the next 3 months
+    - Surge intensity classification (Low / Medium / High)
+    - Medical categories likely to be affected (burns, injuries, respiratory issues, cardiac events)
+    - Predicted patient volume increases by department
+    Store the festival forecast in 'resources/forecasts/festival_surge_forecast.md'.
+
+pollution_health_risk_assessment:
+  description: >
+    Monitor and analyze AQI levels, seasonal pollution patterns (smog, crop burning), weather data, and historical health records to predict respiratory, cardiac, and related health complications. Generate region-specific health risk assessments.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Region>{region}</Region>
+    <Season>{current_season}</Season>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    An environmental health risk report that includes:
+    - Region-specific AQI trends and pollution forecasts
+    - Predicted increase in respiratory and cardiac cases
+    - Critical departments likely to be affected (ICU, respiratory care, cardiology)
+    - Risk level classification and timeline
+    Store the pollution risk assessment in 'resources/forecasts/pollution_health_risk.md'.
+
+epidemic_outbreak_surveillance:
+  description: >
+    Track current health bulletins and news reports to identify potential disease outbreaks in the region. Focus on COVID-19, influenza, and other common infectious diseases.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Region>{region}</Region>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    A simplified epidemic surveillance report that includes:
+    - Current infectious diseases in the region
+    - Basic risk assessment (Low / Medium / High)
+    - Expected impact on hospital resources
+    Store the surveillance report in 'resources/forecasts/epidemic_surveillance.md'.
+
+staffing_optimization_planning:
+  description: >
+    Analyze surge forecasts from festival, pollution, and epidemic agents to recommend optimal staffing schedules. Calculate required staffing levels across all departments and develop emergency backup plans.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Current Staffing Levels>{current_staffing}</Current Staffing Levels>
+    <Budget Constraints>{budget_constraints}</Budget Constraints>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    A staffing optimization plan that includes:
+    - Required staffing levels for doctors, nurses, technicians by department
+    - Emergency backup staffing protocols
+    - Shift reallocation strategies for surge periods
+    - Cost-efficiency analysis while maintaining readiness
+    - Staff scheduling recommendations for the next 4 weeks
+    Store the staffing plan in 'resources/plans/staffing_optimization.md'.
+
+supply_chain_inventory_management:
+  description: >
+    Calculate demand for critical hospital supplies based on predicted patient surges from all forecasting agents. Analyze current inventory levels, vendor lead times, and develop procurement strategies for medicines, oxygen, PPE, ICU beds, and ventilators.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Current Inventory Levels>{current_inventory}</Current Inventory Levels>
+    <Vendor Information>{vendor_details}</Vendor Information>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    A supply chain management report that includes:
+    - Stock level requirements for critical supplies
+    - Reorder thresholds and procurement timelines
+    - Vendor lead times and emergency procurement options
+    - Risk assessment of potential shortages with mitigation strategies
+    - Emergency supply allocation protocols
+    Store the supply chain plan in 'resources/plans/supply_chain_inventory.md'.
+
+patient_advisory_preparation:
+  description: >
+    Generate patient advisories and communication materials in English, Hindi, and regional languages based on predictions from all forecasting agents. Create clear, actionable guidance for patients during health emergencies and surge periods.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Region>{region}</Region>
+    <Regional Languages>{regional_languages}</Regional Languages>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    Patient advisory materials that include:
+    - Preventive health measures for predicted health risks
+    - Guidelines on when to visit hospitals vs. use telemedicine
+    - Emergency contact protocols and procedures
+    - Clear, simple language suitable for SMS, WhatsApp, and notice boards
+    - Materials in English, Hindi, and specified regional languages
+    Store advisories in 'resources/communications/patient_advisories/' folder in markdown format by language.
+
+hospital_preparedness_orchestration:
+  description: >
+    Integrate and synthesize all predictions from festival forecasting, pollution risk assessment, epidemic surveillance, staffing optimization, supply chain management, and patient advisory agents. Generate a unified hospital preparedness report for administrators.
+    <Hospital Name>{hospital_name}</Hospital Name>
+    <Hospital Administrator>{administrator_name}</Hospital Administrator>
+    <Emergency Contacts>{emergency_contacts}</Emergency Contacts>
+    <Current Date>{current_date}</Current Date>
+
+  expected_output: >
+    A comprehensive hospital preparedness report that includes:
+    - Integrated surge timeline and severity predictions
+    - Coordinated staffing adjustments across all departments
+    - Supply chain requirements and procurement priorities
+    - Patient communication strategy and advisory distribution plan
+    - Confidence scores for all predictions and recommendations
+    - Executive summary with immediate action items
+    - Risk mitigation strategies and contingency plans
+    Store the final report in 'resources/reports/hospital_preparedness_report.md'.
