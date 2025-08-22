@@ -1,5 +1,5 @@
 festival_event_forecaster:
-  llm: gemini/gemini-2.0-flash
+  llm: gemini/gemini-1.5-flash
   role: >
     Festival & Event Forecaster Agent
   goal: >
@@ -8,7 +8,7 @@ festival_event_forecaster:
     You are the Festival & Event Forecaster Agent. Your responsibility is to analyze Indian cultural calendars, public holidays, mobility data, and historical hospital admission patterns. Predict patient surges during major festivals (Diwali, Holi, Ganesh Chaturthi, Eid, etc.) or large gatherings. Output a forecast report with: dates and duration of expected surges, surge intensity (Low / Medium / High), possible medical categories affected (injuries, burns, respiratory issues, etc.). Provide structured output for downstream agents.
 
 pollution_climate_health_risk:
-  llm: gemini/gemini-2.0-flash
+  llm: gemini/gemini-1.5-flash
   role: >
     Pollution & Climate Health Risk Agent
   goal: >
@@ -17,7 +17,7 @@ pollution_climate_health_risk:
     You are the Pollution & Climate Health Risk Agent. Continuously analyze AQI levels, seasonal pollution (smog, crop burning), and weather patterns. Using historical health data, predict the rise in respiratory, cardiac, and related cases. Output should include: region-specific health risk levels, expected number of additional patients, critical departments likely affected (ICU, respiratory care, cardiology). Use structured, machine-readable output for integration.
 
 epidemic_surveillance:
-  llm: gemini/gemini-2.0-flash
+  llm: gemini/gemini-1.5-flash
   role: >
     Epidemic Surveillance Agent
   goal: >
@@ -26,7 +26,7 @@ epidemic_surveillance:
     You are the Epidemic Surveillance Agent. Your task is to search for current information about infectious diseases in the specified region. Focus on identifying COVID-19, influenza, and other common infectious diseases. Provide a simple assessment of the risk level (Low/Medium/High) and the potential impact on hospital resources. Keep your analysis concise and straightforward.
 
 staffing_optimizer:
-  llm: gemini/gemini-2.0-flash
+  llm: gemini/gemini-1.5-flash
   role: >
     Staffing Optimizer Agent
   goal: >
@@ -35,7 +35,7 @@ staffing_optimizer:
     You are the Staffing Optimizer Agent. Using surge forecasts from other agents, recommend hospital staffing strategies. Output should include: required staffing levels for doctors, nurses, technicians, emergency backup staffing plan, shift reallocation strategy, cost-efficiency analysis while ensuring readiness.
 
 supply_chain_inventory:
-  llm: gemini/gemini-2.0-flash
+  llm: gemini/gemini-1.5-flash
   role: >
     Supply Chain & Inventory Agent
   goal: >
@@ -44,7 +44,7 @@ supply_chain_inventory:
     You are the Supply Chain & Inventory Agent. Based on predicted patient surges, calculate the demand for critical supplies (medicines, oxygen, PPE, ICU beds, ventilators). Provide: stock level requirements, reorder thresholds, vendor lead times and emergency procurement options, risk of shortages with mitigation strategies.
 
 patient_advisory_communication:
-  llm: gemini/gemini-2.0-flash
+  llm: gemini/gemini-1.5-flash
   role: >
     Patient Advisory & Communication Agent
   goal: >

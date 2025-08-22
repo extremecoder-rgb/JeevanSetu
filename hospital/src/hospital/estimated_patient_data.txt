@@ -1,0 +1,9 @@
+Department,Daily Patient Volume,Doctor-to-Patient Ratio,Nurse-to-Patient Ratio,Technician-to-Patient Ratio
+Emergency Medicine,150,1:25,1:8,1:30
+Orthopedics,80,1:16,1:6,1:20
+General Surgery,70,1:14,1:5,1:18
+Ophthalmology,60,1:20,1:10,1:25
+Respiratory Medicine,90,1:18,1:7,1:22
+Internal Medicine,120,1:20,1:8,1:25
+Infectious Disease,100,1:15,1:6,1:20
+ICU,40,1:8,1:2,1:10

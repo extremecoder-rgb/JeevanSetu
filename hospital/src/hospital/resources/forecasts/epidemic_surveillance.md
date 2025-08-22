@@ -1,27 +1,14 @@
-# Epidemic Surveillance Report
-
-## City General Hospital, Mumbai
-
-**Date:** August 22, 2025
-
-## Current Infectious Diseases in the Region
-
-- **COVID-19**: Currently at moderate levels with stable case numbers
-- **Seasonal Influenza**: Beginning of seasonal increase
-- **Dengue Fever**: Elevated cases due to monsoon season
-
-## Risk Assessment
-
-- **Overall Risk Level**: Medium
-- **COVID-19**: Medium risk - stable but requires monitoring
-- **Influenza**: Medium risk - expected to increase in coming weeks
-- **Dengue**: High risk - monsoon season impact
-
-## Expected Impact on Hospital Resources
-
-- **Bed Occupancy**: Expect 15-20% increase in general ward admissions
-- **ICU Requirements**: Potential 10% increase in ICU admissions
-- **Staff Impact**: Increased demand on infectious disease specialists and general practitioners
-- **Testing Resources**: Higher demand for diagnostic testing
-
-This simplified report provides basic information about current infectious disease trends in Mumbai region.
+{
+  "report_type": "Epidemic Surveillance Report",
+  "region": "Mumbai",
+  "risk_level": "High",
+  "timeline": "August 22, 2025 - Ongoing (COVID-19, Influenza, potential Chandipura virus)",
+  "affected_departments": [
+    "Emergency Medicine",
+    "Respiratory Medicine",
+    "Infectious Disease",
+    "ICU"
+  ],
+  "recommendations": "Increase staffing in Emergency Medicine, Respiratory Medicine, Infectious Disease, and ICU departments. Stock up on respiratory medications, PPE, and testing kits for COVID-19 and influenza. Monitor for Chandipura virus cases. Implement infection control measures and public health awareness campaigns.",
+  "confidence_score": 0.80
+}

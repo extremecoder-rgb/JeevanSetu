@@ -76,6 +76,13 @@ def run():
     print("🚀 Starting Hospital Surge Prediction Analysis...")
     
     try:
+        # Validate GEMINI_API_KEY before proceeding
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if not gemini_api_key:
+            print("\n❌ Error: GEMINI_API_KEY environment variable is not set.")
+            print("📋 Please add your Gemini API key to the .env file.")
+            sys.exit(1)
+            
         inputs = get_inputs()
         crew = HospitalSurgePredictionCrew()
         
@@ -90,10 +97,41 @@ def run():
     except KeyboardInterrupt:
         print("\n⚠️  Process interrupted by user.")
         sys.exit(1)
+    except ValueError as ve:
+        if "GEMINI_API_KEY" in str(ve):
+            print("\n❌ Error: Invalid or missing GEMINI_API_KEY.")
+            print("📋 Please check your .env file and ensure a valid API key is set.")
+            sys.exit(1)
+        else:
+            print(f"\n❌ An error occurred: {ve}")
+            print("🔧 Please check your configuration and try again.")
+            sys.exit(1)
     except Exception as e:
-        print(f"\n❌ An error occurred while running the crew: {e}")
+        error_msg = str(e)
+        print(f"\n❌ An error occurred while running the crew: {error_msg}")
         print("🔧 Please check your configuration and try again.")
-        raise Exception(f"An error occurred while running the crew: {e}")
+        
+        if "Invalid response from LLM call - None or empty" in error_msg:
+            print("\n💡 This error often occurs when there's an issue with your API key or model configuration.")
+            print("   Please verify that your GEMINI_API_KEY is valid and has sufficient quota.")
+            print("   You may also try changing the MODEL in your .env file to a different version.")
+            print("   Current supported models: gemini/gemini-1.5-flash, gemini/gemini-1.5-pro")
+        elif "Task Failed" in error_msg and "Agent:" in error_msg:
+            # Extract agent name from error message if possible
+            agent_name = "Unknown"
+            if "Agent:" in error_msg:
+                agent_parts = error_msg.split("Agent:")
+                if len(agent_parts) > 1:
+                    agent_name = agent_parts[1].strip().split("\n")[0]
+            
+            print(f"\n💡 The agent '{agent_name}' failed to complete its task.")
+            print("   This could be due to:")
+            print("   1. API rate limits or quotas being exceeded")
+            print("   2. Model configuration issues")
+            print("   3. Complex or ambiguous task requirements")
+            print("\n   Try running again with a different model or after waiting a few minutes.")
+        
+        raise Exception(f"An error occurred while running the crew: {error_msg}")
 
 
 def train():

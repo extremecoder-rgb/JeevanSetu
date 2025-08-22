@@ -12,6 +12,13 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic"
 # Load environment variables
 load_dotenv()
 
+# Validate API key
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+if not gemini_api_key:
+    st.error("❌ Error: GEMINI_API_KEY environment variable is not set.")
+    st.info("📋 Please add your Gemini API key to the .env file and restart the application.")
+    st.stop()
+
 try:
     # Try absolute import first
     from hospital.crew import HospitalSurgePredictionCrew
@@ -291,6 +298,7 @@ if submitted:
             "surveillance_data": surveillance_data,
             "current_staffing": current_staffing,
             "budget_constraints": budget_constraints,
+            "api_keys": {"gemini": gemini_api_key, "serper": os.getenv("SERPER_API_KEY", "")},
             "current_inventory": current_inventory,
             "vendor_details": vendor_details,
             "regional_languages": regional_languages,
@@ -334,7 +342,13 @@ if submitted:
                 with tab2:
                     st.markdown("### Complete Analysis Output")
                     if hasattr(result, 'json'):
-                        st.json(result.json)
+                        # Create a safe copy of result.json without exposing API keys
+                        if isinstance(result.json, dict) and "api_keys" in result.json:
+                            safe_result = result.json.copy()
+                            safe_result["api_keys"] = {k: "[REDACTED]" for k in safe_result["api_keys"]}
+                            st.json(safe_result)
+                        else:
+                            st.json(result.json)
                     elif hasattr(result, 'raw'):
                         st.text(result.raw)
                     else:
