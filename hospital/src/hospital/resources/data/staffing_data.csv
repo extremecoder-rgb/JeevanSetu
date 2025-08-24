@@ -1,0 +1,6 @@
+role,total_staff,available,on_call
+Doctor,30,25,5
+Nurse,50,40,10
+Technician,20,18,2
+Administrative Staff,15,12,3
+Support Staff,25,20,5

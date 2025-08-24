@@ -3,8 +3,12 @@ import os
 import json
 import traceback
 import warnings
+import itertools
+import random
 from datetime import datetime
 from dotenv import load_dotenv
+import markdown
+import pdfkit
 
 # Filter out Pydantic deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
@@ -12,61 +16,61 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic"
 # Load environment variables
 load_dotenv()
 
-# Validate API key
-gemini_api_key = os.getenv("GEMINI_API_KEY")
-if not gemini_api_key:
-    st.error("❌ Error: GEMINI_API_KEY environment variable is not set.")
-    st.info("📋 Please add your Gemini API key to the .env file and restart the application.")
+# === Rotating Gemini Key Manager ===
+class GeminiKeyRotator:
+    def __init__(self):
+        self.keys = [
+            os.getenv("GEMINI_API_KEY"),
+            os.getenv("GEMINI_API_KEY_1"),
+            os.getenv("GEMINI_API_KEY_2"),
+            os.getenv("GEMINI_API_KEY_3"),
+            os.getenv("GEMINI_API_KEY_4"),
+            os.getenv("GEMINI_API_KEY_5"),
+            os.getenv("GEMINI_API_KEY_6"),
+            os.getenv("GEMINI_API_KEY_7"),
+        ]
+        self.keys = [k for k in self.keys if k]
+        if not self.keys:
+            raise ValueError("No valid Gemini API keys found in .env!")
+        self._cycle = itertools.cycle(self.keys)
+
+    def next_key(self):
+        return next(self._cycle)
+
+rotator = GeminiKeyRotator()
+
+# === Helper: Select random model from MODEL_POOL ===
+def get_random_model():
+    models = os.getenv("MODEL_POOL", "gemini-1.5-flash").split(",")
+    return f"gemini/{random.choice(models).strip()}"
+
+# Validate at least one key exists
+try:
+    gemini_api_key = rotator.next_key()
+except ValueError as e:
+    st.error(f"❌ {str(e)}")
     st.stop()
 
+# Import Crew
 try:
-    # Try absolute import first
     from hospital.crew import HospitalSurgePredictionCrew
 except ImportError:
     try:
-        # Try relative import as fallback
         from .crew import HospitalSurgePredictionCrew
     except ImportError:
         st.error("❌ Could not import HospitalSurgePredictionCrew. Please ensure the crew module is properly installed.")
         st.stop()
 
-# Streamlit configuration
-st.set_page_config(
-    page_title="🏥 Hospital Surge Prediction System", 
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Streamlit config
+st.set_page_config(page_title="🏥 Hospital Surge Prediction System", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for better styling
+# Custom CSS
 st.markdown("""
 <style>
-    .main-header {
-        background: linear-gradient(90deg, #1f77b4, #ff7f0e);
-        padding: 1rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    .prediction-card {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #1f77b4;
-        margin: 1rem 0;
-    }
-    .error-card {
-        background: #ffeaa7;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #e17055;
-        margin: 1rem 0;
-    }
-    .success-card {
-        background: #d1f2eb;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #00b894;
-        margin: 1rem 0;
-    }
+.main-header { background: linear-gradient(90deg, #1f77b4, #ff7f0e); padding: 1rem; border-radius: 10px; margin-bottom: 2rem; }
+.prediction-card { background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #1f77b4; margin: 1rem 0; }
+.error-card { background: #ffeaa7; padding: 1rem; border-radius: 8px; border-left: 4px solid #e17055; margin: 1rem 0; }
+.success-card { background: #d1f2eb; padding: 1rem; border-radius: 8px; border-left: 4px solid #00b894; margin: 1rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -77,7 +81,7 @@ st.markdown("**AI-Powered Hospital Preparedness & Resource Optimization**")
 st.markdown("Forecast patient surges, optimize staffing, manage inventory, and prepare communication strategies.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Sidebar for quick info and settings
+# Sidebar
 with st.sidebar:
     st.header("ℹ️ System Information")
     st.info("""
@@ -96,147 +100,52 @@ with st.sidebar:
     
     if st.button("🔍 Check Environment"):
         st.subheader("Environment Status")
-        required_vars = ["SERPER_API_KEY", "GOOGLE_API_KEY"]
+        required_vars = ["SERPER_API_KEY", "GEMINI_API_KEY_1"]
         for var in required_vars:
             if os.getenv(var):
                 st.success(f"✅ {var}")
             else:
                 st.error(f"❌ {var} missing")
 
-# Main content area
-col1, col2 = st.columns([2, 1])
+# Main layout
+col1, col2 = st.columns([2,1])
 
 with col1:
-    # Input form
     with st.form("hospital_inputs"):
         st.subheader("🏥 Hospital & Regional Information")
+        hospital_name = st.text_input("Hospital Name *", value=os.getenv("HOSPITAL_NAME",""))
+        region = st.text_input("Region *", value=os.getenv("REGION",""))
+        hospital_type = st.selectbox("Hospital Type", ["Government", "Private", "Semi-Government", "Trust/NGO"])
+        hospital_capacity = st.number_input("Total Bed Capacity", min_value=10, max_value=5000, value=int(os.getenv("HOSPITAL_CAPACITY",200)))
         
-        # Basic hospital info
-        col_a, col_b = st.columns(2)
-        with col_a:
-            hospital_name = st.text_input(
-                "Hospital Name *", 
-                value=os.getenv("HOSPITAL_NAME", ""),
-                help="Official name of the hospital"
-            )
-            region = st.text_input(
-                "Region *", 
-                value=os.getenv("REGION", ""),
-                help="City, state, or geographical region"
-            )
-        
-        with col_b:
-            hospital_type = st.selectbox(
-                "Hospital Type",
-                ["Government", "Private", "Semi-Government", "Trust/NGO"],
-                help="Type of healthcare institution"
-            )
-            hospital_capacity = st.number_input(
-                "Total Bed Capacity",
-                min_value=10,
-                max_value=5000,
-                value=int(os.getenv("HOSPITAL_CAPACITY", 200)),
-                help="Total number of beds in the hospital"
-            )
-        
-        # Time and seasonal info
         st.subheader("📅 Temporal Information")
-        col_c, col_d = st.columns(2)
-        with col_c:
-            historical_data_period = st.text_input(
-                "Historical Data Period", 
-                value=os.getenv("HISTORICAL_DATA_PERIOD", "2020-2024"),
-                help="Period for historical analysis (e.g., 2020-2024)"
-            )
-        with col_d:
-            current_season = st.selectbox(
-                "Current Season", 
-                ["Winter", "Summer", "Monsoon", "Post-Monsoon"],
-                index=["Winter", "Summer", "Monsoon", "Post-Monsoon"].index(os.getenv("CURRENT_SEASON", "Winter")) if os.getenv("CURRENT_SEASON") in ["Winter", "Summer", "Monsoon", "Post-Monsoon"] else 0
-            )
+        historical_data_period = st.text_input("Historical Data Period", value=os.getenv("HISTORICAL_DATA_PERIOD","2020-2024"))
+        current_season = st.selectbox("Current Season", ["Winter", "Summer", "Monsoon", "Post-Monsoon"], index=0)
         
-        # Surveillance and monitoring
         st.subheader("🦠 Disease Surveillance & Monitoring")
-        surveillance_data = st.text_area(
-            "Current Disease Surveillance Data", 
-            value=os.getenv("SURVEILLANCE_DATA", ""),
-            placeholder="Government health bulletins, case trends, outbreak reports, etc.",
-            height=100,
-            help="Current epidemic/endemic disease data and trends"
-        )
+        surveillance_data = st.text_area("Current Disease Surveillance Data", value=os.getenv("SURVEILLANCE_DATA",""), height=100)
         
-        # Staffing information
         st.subheader("👥 Staffing & Human Resources")
-        current_staffing = st.text_area(
-            "Current Staffing Levels *", 
-            value=os.getenv("CURRENT_STAFFING", ""),
-            placeholder="Example: 50 doctors, 120 nurses, 30 technicians, 20 support staff",
-            height=80,
-            help="Current staffing by category and department"
-        )
-        budget_constraints = st.text_input(
-            "Budget Constraints", 
-            value=os.getenv("BUDGET_CONSTRAINTS", ""),
-            placeholder="Example: ₹50 lakhs emergency budget, limited overtime pay",
-            help="Financial limitations and budget allocations"
-        )
+        current_staffing = st.text_area("Current Staffing Levels *", value=os.getenv("CURRENT_STAFFING",""), height=80)
+        budget_constraints = st.text_input("Budget Constraints", value=os.getenv("BUDGET_CONSTRAINTS",""))
         
-        # Inventory and supply chain
         st.subheader("📦 Inventory & Supply Chain")
-        current_inventory = st.text_area(
-            "Current Inventory Levels", 
-            value=os.getenv("CURRENT_INVENTORY", ""),
-            placeholder="Example: PPE kits: 500, Ventilators: 25, Oxygen cylinders: 200, ICU beds: 50",
-            height=100,
-            help="Current stock levels of critical medical supplies and equipment"
-        )
-        vendor_details = st.text_area(
-            "Vendor & Supplier Information", 
-            value=os.getenv("VENDOR_DETAILS", ""),
-            placeholder="Vendor names, contact details, lead times, emergency procurement contacts",
-            height=80,
-            help="Supply chain and vendor contact information"
-        )
+        current_inventory = st.text_area("Current Inventory Levels", value=os.getenv("CURRENT_INVENTORY",""), height=100)
+        vendor_details = st.text_area("Vendor & Supplier Information", value=os.getenv("VENDOR_DETAILS",""), height=80)
         
-        # Communication and administration
         st.subheader("📢 Communication & Administration")
-        col_e, col_f = st.columns(2)
-        with col_e:
-            regional_languages = st.text_input(
-                "Regional Languages", 
-                value=os.getenv("REGIONAL_LANGUAGES", "Hindi,English"),
-                help="Languages for patient advisories (comma-separated)"
-            )
-            administrator_name = st.text_input(
-                "Administrator Name *", 
-                value=os.getenv("ADMINISTRATOR_NAME", ""),
-                help="Name of the chief medical officer or administrator"
-            )
+        regional_languages = st.text_input("Regional Languages", value=os.getenv("REGIONAL_LANGUAGES","English"))
+        administrator_name = st.text_input("Administrator Name *", value=os.getenv("ADMINISTRATOR_NAME",""))
+        emergency_contacts = st.text_area("Emergency Contacts", value=os.getenv("EMERGENCY_CONTACTS",""), height=100)
         
-        with col_f:
-            emergency_contacts = st.text_area(
-                "Emergency Contacts", 
-                value=os.getenv("EMERGENCY_CONTACTS", ""),
-                placeholder="Emergency services, district health officer, backup contacts",
-                height=100,
-                help="Critical contact information for emergency situations"
-            )
-        
-        # Auto-populate current date
         current_date = datetime.now().strftime("%Y-%m-%d")
         st.info(f"📅 Analysis Date: {current_date}")
         
-        # Form submission
         st.markdown("---")
-        submitted = st.form_submit_button(
-            "🚀 Start Hospital Surge Prediction Analysis", 
-            use_container_width=True,
-            type="primary"
-        )
+        submitted = st.form_submit_button("🚀 Start Hospital Surge Prediction Analysis")
 
 with col2:
     st.subheader("📋 Quick Guidelines")
-    
     with st.expander("🎯 Required Fields"):
         st.markdown("""
         **Mandatory Information:**
@@ -244,52 +153,22 @@ with col2:
         - Region 
         - Current Staffing Levels
         - Administrator Name
-        
-        *These fields are essential for generating accurate predictions.*
         """)
-    
     with st.expander("💡 Input Tips"):
         st.markdown("""
-        **Staffing Format:**
-        - Use clear categories: doctors, nurses, technicians
-        - Include numbers: "25 ICU doctors, 60 nurses"
-        
-        **Inventory Format:**
-        - List critical items with quantities
-        - Include equipment and supplies
-        - Mention current stock levels
-        """)
-    
-    with st.expander("🔍 What We Analyze"):
-        st.markdown("""
-        **System Predictions:**
-        - Festival-related surge forecasts
-        - Pollution-induced health risks
-        - Epidemic outbreak surveillance
-        - Optimal staffing schedules
-        - Supply chain requirements
-        - Patient communication strategies
+        **Staffing Format:** 25 ICU doctors, 60 nurses
+        **Inventory Format:** PPE kits: 500, Ventilators: 25
         """)
 
-# Results section
+# Run analysis
 if submitted:
-    # Validation
-    required_fields = [
-        ("Hospital Name", hospital_name),
-        ("Region", region), 
-        ("Current Staffing", current_staffing),
-        ("Administrator Name", administrator_name)
-    ]
-    
-    missing_fields = [field[0] for field in required_fields if not field[1]]
-    
+    missing_fields = []
+    for field_name, value in [("Hospital Name", hospital_name), ("Region", region), ("Current Staffing", current_staffing), ("Administrator Name", administrator_name)]:
+        if not value:
+            missing_fields.append(field_name)
     if missing_fields:
-        st.markdown('<div class="error-card">', unsafe_allow_html=True)
         st.error(f"⚠️ Missing Required Fields: {', '.join(missing_fields)}")
-        st.markdown("Please fill in all required fields marked with * to proceed.")
-        st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # Prepare inputs
         inputs = {
             "hospital_name": hospital_name,
             "region": region,
@@ -298,133 +177,81 @@ if submitted:
             "surveillance_data": surveillance_data,
             "current_staffing": current_staffing,
             "budget_constraints": budget_constraints,
-            "api_keys": {"gemini": gemini_api_key, "serper": os.getenv("SERPER_API_KEY", "")},
             "current_inventory": current_inventory,
             "vendor_details": vendor_details,
             "regional_languages": regional_languages,
             "administrator_name": administrator_name,
             "emergency_contacts": emergency_contacts,
             "current_date": current_date,
+            "api_keys": {"gemini": gemini_api_key, "serper": os.getenv("SERPER_API_KEY","")},
         }
         
-        # Debug information
         if debug_mode:
-            with st.expander("🔧 Debug Information"):
-                st.json(inputs)
+            st.json(inputs)
         
-        # Run prediction
         with st.spinner("🤖 Running AI-powered hospital surge prediction analysis..."):
             try:
-                # Initialize and run crew
                 crew = HospitalSurgePredictionCrew()
                 result = crew.hospital_surge_crew().kickoff(inputs=inputs)
+                st.success("✅ Analysis completed successfully!")
                 
-                # Success message
-                st.markdown('<div class="success-card">', unsafe_allow_html=True)
-                st.success("✅ Hospital surge prediction analysis completed successfully!")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Display results
                 st.subheader("📊 Prediction Results")
+                if hasattr(result, "raw"):
+                    st.text(result.raw)
+                elif hasattr(result, "json"):
+                    st.json(result.json)
                 
-                # Create tabs for different result sections
-                tab1, tab2, tab3, tab4 = st.tabs(["📈 Summary", "📋 Detailed Results", "📁 File Outputs", "🔗 Actions"])
-                
-                with tab1:
-                    st.markdown('<div class="prediction-card">', unsafe_allow_html=True)
-                    if hasattr(result, 'raw'):
-                        st.markdown("### Executive Summary")
-                        st.write(result.raw)
-                    else:
-                        st.write("**Analysis completed successfully.** Check the detailed results and file outputs for comprehensive findings.")
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                with tab2:
-                    st.markdown("### Complete Analysis Output")
-                    if hasattr(result, 'json'):
-                        # Create a safe copy of result.json without exposing API keys
-                        if isinstance(result.json, dict) and "api_keys" in result.json:
-                            safe_result = result.json.copy()
-                            safe_result["api_keys"] = {k: "[REDACTED]" for k in safe_result["api_keys"]}
-                            st.json(safe_result)
-                        else:
-                            st.json(result.json)
-                    elif hasattr(result, 'raw'):
-                        st.text(result.raw)
-                    else:
-                        st.write(str(result))
-                
-                with tab3:
-                    st.markdown("### Generated Files")
-                    expected_files = [
-                        "resources/forecasts/festival_surge_forecast.md",
-                        "resources/forecasts/pollution_health_risk.md",
-                        "resources/forecasts/epidemic_surveillance.md",
-                        "resources/plans/staffing_optimization.md",
-                        "resources/plans/supply_chain_inventory.md",
-                        "resources/communications/patient_advisories/",
-                        "resources/reports/hospital_preparedness_report.md"
-                    ]
-                    
-                    for file_path in expected_files:
-                        if os.path.exists(file_path):
-                            st.success(f"✅ {file_path}")
-                        else:
-                            st.info(f"📁 {file_path} (check if generated)")
-                
-                with tab4:
-                    st.markdown("### Recommended Actions")
-                    st.markdown("""
-                    **Next Steps:**
-                    1. 📋 Review the generated hospital preparedness report
-                    2. 👥 Share staffing recommendations with HR department
-                    3. 📦 Initiate supply chain procurement based on inventory analysis
-                    4. 📢 Distribute patient advisories through recommended channels
-                    5. 🔄 Schedule regular re-analysis based on changing conditions
-                    """)
-                    
-                    if st.button("📧 Generate Summary Email"):
-                        st.info("Email summary feature will be implemented in the next version.")
-                
-                # Save results if requested
+                # Save JSON results
                 if save_results:
+                    os.makedirs("results", exist_ok=True)
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     results_file = f"results/hospital_prediction_{timestamp}.json"
-                    
-                    try:
-                        os.makedirs("results", exist_ok=True)
-                        with open(results_file, 'w') as f:
-                            json.dump({
-                                "inputs": inputs,
-                                "results": str(result),
-                                "timestamp": timestamp
-                            }, f, indent=2)
-                        st.info(f"💾 Results saved to: {results_file}")
-                    except Exception as save_error:
-                        st.warning(f"Could not save results: {save_error}")
+                    with open(results_file,"w") as f:
+                        json.dump({"inputs": inputs, "results": str(result)}, f, indent=2)
+                    st.info(f"💾 Results saved to: {results_file}")
                 
+                # === PDF Download Integration for Windows ===
+                md_file = "resources/reports/hospital_preparedness_report.md"
+                pdf_file = "resources/reports/hospital_preparedness_report.pdf"
+                
+                # Path to wkhtmltopdf.exe
+                wkhtmltopdf_path = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+                pdf_config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+                
+                if os.path.exists(md_file):
+                    with open(md_file, "r", encoding="utf-8") as f:
+                        md_text = f.read()
+                    html_text = markdown.markdown(md_text, extensions=["tables", "fenced_code"])
+                    html_template = f"""
+                    <html>
+                    <head>
+                    <style>
+                    body {{ font-family: Arial, sans-serif; margin: 30px; line-height: 1.5; }}
+                    h1, h2, h3 {{ color: #2E86C1; }}
+                    table {{ border-collapse: collapse; width: 100%; margin-bottom: 20px; }}
+                    table, th, td {{ border: 1px solid black; padding: 8px; }}
+                    th {{ background-color: #D6EAF8; }}
+                    </style>
+                    </head>
+                    <body>
+                    {html_text}
+                    </body>
+                    </html>
+                    """
+                    pdfkit.from_string(html_template, pdf_file, configuration=pdf_config)
+                    
+                    with open(pdf_file, "rb") as f:
+                        pdf_bytes = f.read()
+                    st.download_button(
+                        label="📄 Download Hospital Preparedness Report (PDF)",
+                        data=pdf_bytes,
+                        file_name="hospital_preparedness_report.pdf",
+                        mime="application/pdf"
+                    )
+                else:
+                    st.info("📁 Hospital report not generated yet. Run the analysis first.")
+                    
             except Exception as e:
-                st.markdown('<div class="error-card">', unsafe_allow_html=True)
-                st.error(f"❌ An error occurred during analysis: {str(e)}")
-                
+                st.error(f"❌ Error: {str(e)}")
                 if debug_mode:
-                    st.text("Full error traceback:")
                     st.text(traceback.format_exc())
-                    
-                st.markdown("""
-                **Troubleshooting Tips:**
-                - Check if all required API keys are set in your .env file
-                - Ensure the crew module is properly installed
-                - Verify network connectivity for web search tools
-                - Try reducing the complexity of input data
-                """)
-                st.markdown('</div>', unsafe_allow_html=True)
-
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: #666; padding: 2rem;'>
-    🏥 Hospital Surge Prediction System | Powered by CrewAI & Gemini | 
-    <a href='https://github.com/your-repo' target='_blank'>Documentation</a>
-</div>
-""", unsafe_allow_html=True)

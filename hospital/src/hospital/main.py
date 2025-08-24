@@ -1,33 +1,29 @@
 #!/usr/bin/env python
+import warnings
+
+# ✅ Suppress both DeprecationWarnings & Pydantic-specific warnings
+try:
+    from pydantic import PydanticDeprecatedSince20
+    warnings.filterwarnings("ignore", category=PydanticDeprecatedSince20)
+except ImportError:
+    pass
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*class-based.*config.*")
+warnings.filterwarnings("ignore", message=".*Support for class-based.*")
+warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
+
 import sys
 import os
-import warnings
 from datetime import datetime
 from dotenv import load_dotenv
-
 from hospital.crew import HospitalSurgePredictionCrew
 
 # Load environment variables
 load_dotenv()
 
-# Filter out Pydantic deprecation warnings - more comprehensive approach
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", message=".*class-based.*config.*")
-warnings.filterwarnings("ignore", message=".*Support for class-based.*")
-
-# Filter out other warnings
-warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
-
-# This main file is intended to be a way for you to run your
-# crew locally, so refrain from adding unnecessary logic into this file.
-# Replace with inputs you want to test with, it will automatically
-# interpolate any tasks and agents information
-
-
 def get_inputs():
-    """
-    Get inputs from environment variables with validation.
-    """
+    """Get inputs from environment variables with validation."""
     inputs = {
         "hospital_name": os.getenv("HOSPITAL_NAME", ""),
         "region": os.getenv("REGION", ""),
@@ -44,19 +40,17 @@ def get_inputs():
         "current_date": datetime.now().strftime("%Y-%m-%d"),
     }
     
-    # Validate required fields
     required_fields = ["hospital_name", "region", "current_staffing", "administrator_name"]
-    missing_fields = [field for field in required_fields if not inputs[field]]
+    missing_fields = [f for f in required_fields if not inputs[f]]
     
     if missing_fields:
-        print(f"❌ Error: Missing required environment variables:")
-        for field in missing_fields:
-            print(f"   - {field.upper()}")
+        print("❌ Error: Missing required environment variables:")
+        for f in missing_fields:
+            print(f"   - {f.upper()}")
         print("\n📋 Please check your .env file and ensure all required variables are set.")
         print("   Refer to the .env.example file for the complete list of required variables.")
         sys.exit(1)
     
-    # Display configuration summary
     print("🏥 Hospital Surge Prediction System")
     print("=" * 50)
     print(f"Hospital: {inputs['hospital_name']}")
@@ -68,19 +62,15 @@ def get_inputs():
     
     return inputs
 
-
 def run():
-    """
-    Run the hospital surge prediction crew.
-    """
+    """Run the hospital surge prediction crew."""
     print("🚀 Starting Hospital Surge Prediction Analysis...")
     
     try:
-        # Validate GEMINI_API_KEY before proceeding
-        gemini_api_key = os.getenv("GEMINI_API_KEY")
-        if not gemini_api_key:
-            print("\n❌ Error: GEMINI_API_KEY environment variable is not set.")
-            print("📋 Please add your Gemini API key to the .env file.")
+        gemini_api_key_1 = os.getenv("GEMINI_API_KEY_1")
+        gemini_api_key_2 = os.getenv("GEMINI_API_KEY_2")
+        if not gemini_api_key_1 or not gemini_api_key_2:
+            print("\n❌ Error: Both GEMINI_API_KEY_1 and GEMINI_API_KEY_2 must be set in your .env file.")
             sys.exit(1)
             
         inputs = get_inputs()
@@ -91,208 +81,17 @@ def run():
         
         print("\n✅ Hospital surge prediction analysis completed successfully!")
         print(f"📊 Results have been saved to the reports directory.")
-        
         return result
         
     except KeyboardInterrupt:
         print("\n⚠️  Process interrupted by user.")
         sys.exit(1)
-    except ValueError as ve:
-        if "GEMINI_API_KEY" in str(ve):
-            print("\n❌ Error: Invalid or missing GEMINI_API_KEY.")
-            print("📋 Please check your .env file and ensure a valid API key is set.")
-            sys.exit(1)
-        else:
-            print(f"\n❌ An error occurred: {ve}")
-            print("🔧 Please check your configuration and try again.")
-            sys.exit(1)
     except Exception as e:
         error_msg = str(e)
-        print(f"\n❌ An error occurred while running the crew: {error_msg}")
-        print("🔧 Please check your configuration and try again.")
-        
+        print(f"\n❌ An error occurred: {error_msg}")
         if "Invalid response from LLM call - None or empty" in error_msg:
-            print("\n💡 This error often occurs when there's an issue with your API key or model configuration.")
-            print("   Please verify that your GEMINI_API_KEY is valid and has sufficient quota.")
-            print("   You may also try changing the MODEL in your .env file to a different version.")
-            print("   Current supported models: gemini/gemini-1.5-flash, gemini/gemini-1.5-pro")
-        elif "Task Failed" in error_msg and "Agent:" in error_msg:
-            # Extract agent name from error message if possible
-            agent_name = "Unknown"
-            if "Agent:" in error_msg:
-                agent_parts = error_msg.split("Agent:")
-                if len(agent_parts) > 1:
-                    agent_name = agent_parts[1].strip().split("\n")[0]
-            
-            print(f"\n💡 The agent '{agent_name}' failed to complete its task.")
-            print("   This could be due to:")
-            print("   1. API rate limits or quotas being exceeded")
-            print("   2. Model configuration issues")
-            print("   3. Complex or ambiguous task requirements")
-            print("\n   Try running again with a different model or after waiting a few minutes.")
-        
-        raise Exception(f"An error occurred while running the crew: {error_msg}")
-
-
-def train():
-    """
-    Train the crew for a given number of iterations.
-    """
-    if len(sys.argv) < 3:
-        print("❌ Usage: python main.py train <n_iterations> <filename>")
-        print("   Example: python main.py train 5 training_results.json")
-        sys.exit(1)
-    
-    print(f"🎓 Training Hospital Surge Prediction Crew...")
-    print(f"   Iterations: {sys.argv[1]}")
-    print(f"   Output file: {sys.argv[2]}")
-    
-    try:
-        inputs = get_inputs()
-        crew = HospitalSurgePredictionCrew()
-        
-        result = crew.hospital_surge_crew().train(
-            n_iterations=int(sys.argv[1]), 
-            filename=sys.argv[2], 
-            inputs=inputs
-        )
-        
-        print(f"\n✅ Training completed! Results saved to {sys.argv[2]}")
-        return result
-        
-    except ValueError:
-        print("❌ Error: Number of iterations must be a valid integer.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ An error occurred while training the crew: {e}")
-        raise Exception(f"An error occurred while training the crew: {e}")
-
-
-def replay():
-    """
-    Replay the crew execution from a specific task.
-    """
-    if len(sys.argv) < 2:
-        print("❌ Usage: python main.py replay <task_id>")
-        print("   Example: python main.py replay festival_event_analysis")
-        sys.exit(1)
-    
-    print(f"🔄 Replaying Hospital Surge Prediction from task: {sys.argv[1]}")
-    
-    try:
-        crew = HospitalSurgePredictionCrew()
-        result = crew.hospital_surge_crew().replay(task_id=sys.argv[1])
-        
-        print(f"\n✅ Replay completed successfully!")
-        return result
-        
-    except Exception as e:
-        print(f"\n❌ An error occurred while replaying the crew: {e}")
-        print("🔧 Please ensure the task_id is valid and try again.")
-        raise Exception(f"An error occurred while replaying the crew: {e}")
-
-
-def test():
-    """
-    Test the crew execution and returns the results.
-    """
-    if len(sys.argv) < 3:
-        print("❌ Usage: python main.py test <n_iterations> <eval_llm>")
-        print("   Example: python main.py test 3 gemini/gemini-2.0-flash")
-        sys.exit(1)
-    
-    print(f"🧪 Testing Hospital Surge Prediction Crew...")
-    print(f"   Iterations: {sys.argv[1]}")
-    print(f"   Evaluation LLM: {sys.argv[2]}")
-    
-    try:
-        inputs = get_inputs()
-        crew = HospitalSurgePredictionCrew()
-        
-        result = crew.hospital_surge_crew().test(
-            n_iterations=int(sys.argv[1]), 
-            eval_llm=sys.argv[2], 
-            inputs=inputs
-        )
-        
-        print(f"\n✅ Testing completed successfully!")
-        return result
-        
-    except ValueError:
-        print("❌ Error: Number of iterations must be a valid integer.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ An error occurred while testing the crew: {e}")
-        raise Exception(f"An error occurred while testing the crew: {e}")
-
-
-def validate_env():
-    """
-    Validate environment configuration.
-    """
-    print("🔍 Validating environment configuration...")
-    
-    # Check if .env file exists
-    if not os.path.exists('.env'):
-        print("⚠️  Warning: .env file not found.")
-        print("   Please create a .env file based on the provided template.")
-        return False
-    
-    # Check critical API keys
-    critical_keys = ["SERPER_API_KEY", "GOOGLE_API_KEY"]
-    missing_keys = []
-    
-    for key in critical_keys:
-        if not os.getenv(key):
-            missing_keys.append(key)
-    
-    if missing_keys:
-        print("❌ Missing critical API keys:")
-        for key in missing_keys:
-            print(f"   - {key}")
-        print("\n🔑 Please add these API keys to your .env file.")
-        return False
-    
-    print("✅ Environment configuration looks good!")
-    return True
-
-
-def main():
-    """
-    Main entry point with command routing.
-    """
-    if len(sys.argv) < 2:
-        print("🏥 Hospital Surge Prediction System")
-        print("\nUsage:")
-        print("  python main.py run                              # Run surge prediction analysis")
-        print("  python main.py train <iterations> <filename>    # Train the system")
-        print("  python main.py test <iterations> <eval_llm>     # Test the system")
-        print("  python main.py replay <task_id>                 # Replay from specific task")
-        print("  python main.py validate                         # Validate environment setup")
-        print("\nExamples:")
-        print("  python main.py run")
-        print("  python main.py train 5 training_results.json")
-        print("  python main.py test 3 gemini/gemini-2.0-flash")
-        print("  python main.py replay festival_event_analysis")
-        sys.exit(1)
-    
-    command = sys.argv[1].lower()
-    
-    if command == "run":
-        run()
-    elif command == "train":
-        train()
-    elif command == "test":
-        test()
-    elif command == "replay":
-        replay()
-    elif command == "validate":
-        validate_env()
-    else:
-        print(f"❌ Unknown command: {command}")
-        print("   Use 'python main.py' to see available commands.")
-        sys.exit(1)
-
+            print("\n💡 This usually means an API key or model issue.")
+        raise
 
 if __name__ == "__main__":
-    main()
+    run()

@@ -1,0 +1,8 @@
+date,department,patient_count,festival_name
+2025-01-14,Emergency,42,Makar Sankranti
+2025-03-29,Emergency,38,Holi
+2025-08-15,Emergency,55,Independence Day
+2025-10-02,Emergency,60,Gandhi Jayanti
+2025-10-24,Emergency,70,Dussehra
+2025-11-12,Emergency,75,Diwali
+2025-12-25,Emergency,50,Christmas

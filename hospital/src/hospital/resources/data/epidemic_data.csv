@@ -1,0 +1,8 @@
+date,disease,cases,deaths,source_url
+2025-08-01,Influenza,12,0,https://www.cdc.gov/flu/spotlights/index.htm
+2025-08-02,Influenza,15,0,https://www.cdc.gov/flu/spotlights/index.htm
+2025-08-03,COVID-19,5,0,https://covid.cdc.gov/
+2025-08-04,Influenza,10,0,https://www.cdc.gov/flu/spotlights/index.htm
+2025-08-05,Dengue,3,0,https://www.who.int/emergencies/disease-outbreak-news
+2025-08-06,Influenza,8,0,https://www.cdc.gov/flu/spotlights/index.htm
+2025-08-07,COVID-19,4,0,https://covid.cdc.gov/

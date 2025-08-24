@@ -1,0 +1,7 @@
+item_name,current_stock,reorder_point,daily_consumption
+PPE Kit,500,200,30
+Oxygen Cylinder,50,20,5
+Ventilator,10,5,1
+ICU Bed,25,10,2
+Masks,1000,400,50
+Sanitizer (L),200,50,20
