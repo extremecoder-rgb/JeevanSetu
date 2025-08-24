@@ -1,8 +1,8 @@
-# Hospital Crew - AI-Powered Patient Surge Prediction System
+# Jeevan Setu - AI-Powered Patient Surge Prediction System
 
 ## Overview
 
-The Hospital Crew is a sophisticated multi-agent AI system built on the crewAI framework, designed to predict patient surges and optimize hospital preparedness. This intelligent system analyzes various data sources including cultural events, environmental factors, epidemic trends, and hospital operations to provide comprehensive forecasts and actionable recommendations for hospital administrators.
+Jeevan Setu is a sophisticated multi-agent AI system built on the crewAI framework, designed to predict patient surges and optimize hospital preparedness. This intelligent system analyzes various data sources including cultural events, environmental factors, epidemic trends, and hospital operations to provide comprehensive forecasts and actionable recommendations for hospital administrators.
 
 ## 🏥 System Architecture
 
